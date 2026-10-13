@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dark Shield — A Living Computational Universe</title>
 <meta name="description" content="Dark Shield is a living computational universe: not a desktop, not an application platform — a new way to experience computation.">
+<meta property="og:title" content="Dark Shield — A Living Computational Universe">
+<meta property="og:description" content="Dark Shield is a living computational universe: not a desktop, not an application platform — a new way to experience computation.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://jonesjordan012.github.io/dark-shield-os">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dark Shield — A Living Computational Universe">
+<meta name="twitter:description" content="Dark Shield is a living computational universe: not a desktop, not an application platform — a new way to experience computation.">
+<!-- Optional preview image: take a screenshot of the starscape, save it as social-preview.png in the repo root, push it, then uncomment the line below. -->
+<!-- <meta property="og:image" content="https://jonesjordan012.github.io/dark-shield-os/social-preview.png"> -->
 <style>
   :root {
     --ink: #e8ecf8;
@@ -143,6 +152,34 @@
     color: #c9d4f2;
   }
   code { font-family: Consolas, "Courier New", monospace; }
+  #bloom { position: fixed; left: 0; top: 0; z-index: 2; pointer-events: none; }
+  .petal {
+    position: absolute; left: 0; top: 0;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.3s ease;
+    background: rgba(10, 16, 34, 0.94);
+    border: 1px solid rgba(127, 212, 255, 0.5);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 0.5rem 0.95rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 0 18px rgba(127, 212, 255, 0.28);
+    font-family: "Segoe UI", system-ui, sans-serif;
+  }
+  #bloom.open .petal { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1); opacity: 1; }
+  .petal:hover, .petal.active { border-color: #ffd97f; box-shadow: 0 0 26px rgba(255, 217, 127, 0.45); }
+  .petal .pi { margin-right: 0.45rem; }
+  #star-body dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.8rem; }
+  #star-body dt { color: var(--dim); }
+  #star-body dd { margin: 0; font-family: Consolas, monospace; }
+  #star-body pre { margin: 0; font-family: Consolas, monospace; font-size: 0.78rem; line-height: 1.55; white-space: pre-wrap; color: #c9d4f2; }
+  #star-panel h3 .petal-tag { color: #ffd97f; font-weight: 400; font-size: 0.85rem; }
+  @media (prefers-reduced-motion: reduce) { .petal { transition: none; } }
 </style>
 </head>
 <body>
@@ -152,14 +189,10 @@
 <aside id="star-panel" aria-live="polite">
   <button id="star-close" aria-label="Close">&times;</button>
   <h3 id="star-name">star</h3>
-  <dl>
-    <dt>type</dt><dd id="star-type">-</dd>
-    <dt>gravity</dt><dd id="star-gravity">-</dd>
-    <dt>antigravity</dt><dd id="star-antigravity">-</dd>
-    <dt>possibility</dt><dd id="star-possibility">-</dd>
-  </dl>
+  <div id="star-body"></div>
   <p class="note">Illustrative metrics — the universe showing its work, not the truth.</p>
 </aside>
+<div id="bloom"></div>
 
 <main>
   <section class="hero">
@@ -167,7 +200,7 @@
     <h2>A Living Computational Universe</h2>
     <p class="lede">Computing was built around files, folders, and applications.<br>
     Dark Shield is built around <strong>relationships, intentions, time, and possibility</strong>.</p>
-    <p class="hint">CLICK ANY STAR &nbsp;·&nbsp; MOVE TO BEND ITS GRAVITY &nbsp;·&nbsp; WATCH THE TIMER</p>
+    <p class="hint">CLICK A STAR TO MAKE IT BLOOM &nbsp;·&nbsp; MOVE TO BEND ITS GRAVITY &nbsp;·&nbsp; WATCH THE TIMER</p>
     <div class="scroll-cue">&#8964;</div>
   </section>
 
@@ -408,6 +441,7 @@ if __name__ == &quot;__main__&quot;:
   var stars = [];
   var mouse = { x: -9999, y: -9999 };
   var wells = [];
+  var swirlK = 0, swirlX = 0, swirlY = 0, swirlS = null;
 
   function rnd(a, b) { return a + Math.random() * (b - a); }
   function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
@@ -479,6 +513,102 @@ if __name__ == &quot;__main__&quot;:
   canvas.addEventListener("pointerleave", function () {
     mouse.x = -9999; mouse.y = -9999;
   });
+  // --- petal bloom ---------------------------------------------------------
+  var PETALS = [
+    { id: "metrics",     label: "Metrics",     icon: "\u25C9" },
+    { id: "code",        label: "Code",        icon: "\u2328" },
+    { id: "echo",        label: "Echo",        icon: "\u25D0" },
+    { id: "lineage",     label: "Lineage",     icon: "\u2682" },
+    { id: "afterburner", label: "Afterburner", icon: "\u2726" }
+  ];
+  var bloomed = null;
+  var bloomEl = document.getElementById("bloom");
+  var starBody = document.getElementById("star-body");
+
+  function f2(x) { return x.toFixed(2); }
+
+  function petalContent(s, pid) {
+    if (pid === "metrics") {
+      return "<dl>" +
+        "<dt>type</dt><dd>" + (s.twinkling ? "twinkling star" : "star") + "</dd>" +
+        "<dt>gravity</dt><dd>" + f2(s.gravity) + "</dd>" +
+        "<dt>antigravity</dt><dd>" + f2(s.antigravity) + "</dd>" +
+        "<dt>possibility</dt><dd>" + f2(s.possibility) + "</dd></dl>";
+    }
+    if (pid === "code") {
+      return "<pre>// NPU proposal \u00B7 illustrative, not a command\n" +
+        "refactor " + s.name + "\n" +
+        "  gravity_relief \u2248 " + f2(s.gravity * 0.18) + "\n" +
+        "  confidence      " + f2(0.55 + s.possibility * 0.35) + "</pre>";
+    }
+    if (pid === "echo") {
+      var c1 = f2(0.4 + s.gravity * 0.3), c2 = f2(0.5 + s.gravity * 0.3);
+      return "<pre>t-2d  confidence " + c1 + " \u2192 " + c2 + "\n" +
+        "      supporting evidence observed\n" +
+        "t-9h  confidence " + c2 + " \u2192 " + f2(Math.min(0.97, parseFloat(c2) + 0.04)) + "\n" +
+        "      competing evidence recorded</pre>";
+    }
+    if (pid === "lineage") {
+      return "<dl>" +
+        "<dt>origin</dt><dd>" + (s.twinkling ? "twinkling_star" : "star") + "</dd>" +
+        "<dt>parent</dt><dd>" + s.parent + "</dd>" +
+        "<dt>echoes</dt><dd>" + (2 + ((s.gravity * 7) | 0)) + " recorded</dd></dl>";
+    }
+    // afterburner
+    return "<pre>transformation_velocity  " + f2(s.possibility * 0.9 + 0.05) + "\n" +
+      "novelty_pressure         " + f2(s.antigravity * 0.85 + 0.1) + "\n" +
+      "\"change is gathering here\"</pre>";
+  }
+
+  function fillPanel(s, pid) {
+    var p = null;
+    for (var i = 0; i < PETALS.length; i++) if (PETALS[i].id === pid) p = PETALS[i];
+    document.getElementById("star-name").innerHTML =
+      s.name + ' <span class="petal-tag">\u00B7 ' + p.label + "</span>";
+    starBody.innerHTML = petalContent(s, pid);
+    panel.classList.add("visible");
+    var btns = bloomEl.querySelectorAll(".petal");
+    for (i = 0; i < btns.length; i++) {
+      if (btns[i].getAttribute("data-pid") === pid) btns[i].classList.add("active");
+      else btns[i].classList.remove("active");
+    }
+  }
+
+  function openBloom(s) {
+    bloomed = s;
+    if (!s.parent) s.parent = "star-" + pick(NAMES) + "-" + ((Math.random() * 99) | 0);
+    bloomEl.innerHTML = "";
+    var R = Math.max(64, Math.min(96, W * 0.11));
+    for (var i = 0; i < PETALS.length; i++) {
+      (function (p, i) {
+        var a = (-90 + i * 72) * Math.PI / 180;
+        var b = document.createElement("button");
+        b.className = "petal";
+        b.setAttribute("data-pid", p.id);
+        b.style.setProperty("--tx", (Math.cos(a) * R).toFixed(1) + "px");
+        b.style.setProperty("--ty", (Math.sin(a) * R).toFixed(1) + "px");
+        b.style.transitionDelay = (i * 55) + "ms";
+        b.innerHTML = '<span class="pi">' + p.icon + "</span>" + p.label;
+        b.addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          fillPanel(s, p.id);
+        });
+        bloomEl.appendChild(b);
+      })(PETALS[i], i);
+    }
+    bloomEl.style.transform = "translate(" + s.x + "px," + s.y + "px)";
+    // force reflow so the open transition runs
+    void bloomEl.offsetWidth;
+    bloomEl.classList.add("open");
+    fillPanel(s, "metrics");
+  }
+
+  function closeBloom() {
+    bloomed = null;
+    bloomEl.classList.remove("open");
+    panel.classList.remove("visible");
+  }
+
   canvas.addEventListener("click", function (e) {
     var best = null, bestD = 34;
     for (var i = 0; i < stars.length; i++) {
@@ -486,19 +616,41 @@ if __name__ == &quot;__main__&quot;:
       var d = Math.hypot(s.x - e.clientX, s.y - e.clientY);
       if (d < bestD) { bestD = d; best = s; }
     }
-    if (best) showPanel(best);
+    if (!best) { closeBloom(); return; }
+    if (bloomed === best) closeBloom();
+    else openBloom(best);
   });
   document.getElementById("star-close").addEventListener("click", function () {
-    panel.classList.remove("visible");
+    closeBloom();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeBloom();
   });
 
-  function showPanel(s) {
-    document.getElementById("star-name").textContent = s.name;
-    document.getElementById("star-type").textContent = s.twinkling ? "twinkling star" : "star";
-    document.getElementById("star-gravity").textContent = s.gravity.toFixed(2);
-    document.getElementById("star-antigravity").textContent = s.antigravity.toFixed(2);
-    document.getElementById("star-possibility").textContent = s.possibility.toFixed(2);
-    panel.classList.add("visible");
+  // Van Gogh swirl field: the focused star's metrics become visible weather.
+  // antigravity -> turbulence (reach and wildness), gravity -> tightness
+  // (ring radius), possibility -> luminosity. Neighboring stars are bent
+  // by the field before this draws, so the mapping distorts the sky itself.
+  function drawSwirl(s, t, k) {
+    var turb = 0.35 + s.antigravity * 0.9;
+    var tight = 1.18 - s.gravity * 0.55;
+    var lum = 0.13 + s.possibility * 0.24;
+    for (var r = 0; r < 4; r++) {
+      var rad = (30 + r * 30) * tight;
+      var rot = t * (0.28 + turb * 0.5) * (r % 2 ? -1 : 1) + s.phase;
+      var arcLen = Math.PI * (1.15 + turb * 0.85);
+      var alpha = lum * (1 - r * 0.18) * k;
+      ctx.strokeStyle = "hsla(" + s.hue + ", 88%, 72%," + alpha.toFixed(3) + ")";
+      ctx.lineWidth = Math.max(0.7, 2.3 - r * 0.42);
+      ctx.beginPath();
+      for (var q = 0; q <= 30; q++) {
+        var ang = rot + (q / 30) * arcLen;
+        var rr = rad + Math.sin(ang * 3 + t * 1.7 + s.phase) * 5.5 * turb;
+        var px = swirlX + Math.cos(ang) * rr, py = swirlY + Math.sin(ang) * rr;
+        if (q === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
   }
 
   // --- render --------------------------------------------------------------
@@ -521,6 +673,7 @@ if __name__ == &quot;__main__&quot;:
       if (wl.y < 0 || wl.y > H) wl.vy *= -1;
     }
 
+    // pass 1: positions (drift, orbit, mouse gravity)
     for (i = 0; i < stars.length; i++) {
       var s = stars[i];
       // anchor drift
@@ -544,6 +697,45 @@ if __name__ == &quot;__main__&quot;:
         y += (dy / md) * pull;
       }
       s.x = x; s.y = y;
+      s.glow = glow;
+    }
+
+    // focus swirl: ease the field in and out around the bloomed star
+    if (bloomed) {
+      swirlK += (1 - swirlK) * 0.09;
+      swirlX = bloomed.x; swirlY = bloomed.y; swirlS = bloomed;
+    } else {
+      swirlK += (0 - swirlK) * 0.09;
+    }
+
+    // pass 2: the swirl field bends neighboring stars (lensing)
+    if (swirlK > 0.02 && swirlS) {
+      var f = swirlS;
+      var dir = f.twinkling ? 1 : -1;
+      for (i = 0; i < stars.length; i++) {
+        s = stars[i];
+        if (s === f) continue;
+        dx = s.x - swirlX; dy = s.y - swirlY;
+        var d = Math.hypot(dx, dy);
+        if (d < 170 && d > 4) {
+          var fall = 1 - d / 170;
+          var wob = fall * fall;
+          var ang = Math.atan2(dy, dx);
+          var tang = wob * 46 * dir * (0.6 + f.antigravity * 0.8);
+          var breathe = Math.sin(t * 2.1 + d * 0.045 + f.phase) * wob * 12;
+          var a2 = ang + tang / Math.max(d, 26);
+          var d2 = d + breathe;
+          s.x = swirlX + Math.cos(a2) * d2;
+          s.y = swirlY + Math.sin(a2) * d2;
+        }
+      }
+      drawSwirl(f, t, swirlK);
+    }
+
+    // pass 3: draw the stars
+    for (i = 0; i < stars.length; i++) {
+      s = stars[i];
+      x = s.x; y = s.y; glow = s.glow || 0;
 
       // twinkle
       var tw = s.twinkling
@@ -565,6 +757,10 @@ if __name__ == &quot;__main__&quot;:
       ctx.fillStyle = "hsla(" + s.hue + ", 85%, 78%," + a + ")";
       ctx.fillText(s.glyph, x, y);
       ctx.shadowBlur = 0;
+    }
+
+    if (bloomed) {
+      bloomEl.style.transform = "translate(" + bloomed.x + "px," + bloomed.y + "px)";
     }
 
     // eclipse veil + dark shield arc
