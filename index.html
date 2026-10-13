@@ -128,6 +128,20 @@
     animation: bob 2.4s ease-in-out infinite;
   }
   @keyframes bob { 0%,100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(10px); opacity: 1; } }
+  .codeblock {
+    background: rgba(2, 4, 10, 0.85);
+    border: 1px solid rgba(127, 212, 255, 0.18);
+    border-radius: 10px;
+    padding: 1.1rem 1.2rem;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    max-height: 480px;
+    overflow: auto;
+    white-space: pre;
+    color: #c9d4f2;
+  }
+  code { font-family: Consolas, "Courier New", monospace; }
 </style>
 </head>
 <body>
@@ -179,6 +193,175 @@
       <h2>The Mission</h2>
       <p>To create a relationship-native computing universe where time is visible, possibility is observable, software evolution is understandable, and humanity can explore the future with confidence.</p>
       <p><em>Dark Shield is a living computational universe. A place where information possesses gravity, possibility has shape, and humanity explores what comes next.</em></p>
+    </div>
+  </section>
+
+
+  <section>
+    <div class="card">
+      <h2>The Prototype &mdash; First Light</h2>
+      <p>On October 10, 2026, the universe turned on for the first time: <strong>14 stars, 22,862 bytes of matter, 8 pulsars</strong> &mdash; a laptop seeing itself as a cosmos. Every file a star, every process a pulsar.</p>
+      <p>It runs on nothing but Python 3. No libraries to install:</p>
+      <p><code>python3 prototype/starscape.py [directory]</code></p>
+      <p>Reading it top to bottom <em>is</em> lesson one &mdash; the whole universe is built from five ideas: lists, loops, dictionaries, functions, and files.</p>
+      <pre class="codeblock"><code>
+&quot;&quot;&quot;
+DARK SHIELD 0.1 - first light
+============================
+The smallest possible universe: every file is a star, every process a pulsar.
+
+Run it with nothing but Python installed:
+    python3 starscape.py [directory]
+
+Reading this file top to bottom IS lesson one. Each section teaches
+exactly one idea, and the whole universe is built from five of them:
+lists, loops, dictionaries, functions, and files.
+&quot;&quot;&quot;
+
+import hashlib   # gives every filename a stable &quot;address&quot; in the sky
+import math      # lets star brightness grow gently with file size
+import os        # lets us walk directories and read /proc
+import sys       # lets us read the directory you typed on the command line
+
+# ---------------------------------------------------------------------------
+# 1. The sky: a fixed grid of characters. WIDTH x HEIGHT &quot;parsecs&quot;.
+# ---------------------------------------------------------------------------
+WIDTH, HEIGHT = 72, 18
+
+# Stars burn brighter as files get bigger. Five magnitudes, dim -&gt; bright.
+# (If your terminal can&#x27;t show these, we fall back to plain ASCII below.)
+STAR_GLYPHS = &quot;·*✦✶✹&quot;
+PULSAR_GLYPH = &quot;◉&quot;
+
+# Every decorative character lives in one place, so the ASCII fallback
+# can swap the whole sky at once.
+DOT, SPARK = &quot;·&quot;, &quot;✦&quot;
+HLINE, VLINE, TL, TR, BL, BR = &quot;─&quot;, &quot;│&quot;, &quot;┌&quot;, &quot;┐&quot;, &quot;└&quot;, &quot;┘&quot;
+TIMES = &quot;×&quot;
+
+# Colors, used only when the terminal supports them.
+USE_COLOR = sys.stdout.isatty() and os.environ.get(&quot;NO_COLOR&quot;) is None
+BLUE = &quot;\033[94m&quot; if USE_COLOR else &quot;&quot;
+YELLOW = &quot;\033[93m&quot; if USE_COLOR else &quot;&quot;
+DIM = &quot;\033[2m&quot; if USE_COLOR else &quot;&quot;
+RESET = &quot;\033[0m&quot; if USE_COLOR else &quot;&quot;
+
+
+# ---------------------------------------------------------------------------
+# 2. Functions: small named machines. Each one does exactly one thing.
+# ---------------------------------------------------------------------------
+def sky_address(name):
+    &quot;&quot;&quot;Turn a filename into a stable (x, y) position in the sky.
+
+    The same name always lands on the same star - your universe does
+    not rearrange itself between runs. This is a hash, Dark Shield&#x27;s
+    future &#x27;star://&#x27; identity scheme in miniature.&quot;&quot;&quot;
+    digest = hashlib.sha256(name.encode(&quot;utf-8&quot;, &quot;replace&quot;)).digest()
+    x = int.from_bytes(digest[0:2], &quot;big&quot;) % WIDTH
+    y = int.from_bytes(digest[2:4], &quot;big&quot;) % HEIGHT
+    return x, y
+
+
+def magnitude(size_bytes):
+    &quot;&quot;&quot;A file 10x bigger burns one step brighter. Log scale, like real stars.&quot;&quot;&quot;
+    if size_bytes &lt;= 0:
+        return 0
+    return min(len(STAR_GLYPHS) - 1, int(math.log10(size_bytes + 1)))
+
+
+def collect_stars(root):
+    &quot;&quot;&quot;Walk one directory (no recursion yet - that is lesson two) and
+    return a list of (name, size) for the files living there.&quot;&quot;&quot;
+    stars = []
+    try:
+        entries = sorted(os.listdir(root))
+    except OSError:
+        return stars
+    for name in entries:
+        path = os.path.join(root, name)
+        try:
+            if os.path.isfile(path):
+                stars.append((name, os.path.getsize(path)))
+        except OSError:
+            continue  # a star we cannot weigh still counts as dark matter
+    return stars
+
+
+def collect_pulsars(limit=8):
+    &quot;&quot;&quot;Read /proc - Linux&#x27;s window into living processes - and return the
+    most numerous process names. Each one is a pulsar: active computation.&quot;&quot;&quot;
+    counts = {}
+    try:
+        pids = [p for p in os.listdir(&quot;/proc&quot;) if p.isdigit()]
+    except OSError:
+        return []
+    for pid in pids:
+        try:
+            with open(f&quot;/proc/{pid}/comm&quot;, encoding=&quot;utf-8&quot;) as f:
+                name = f.read().strip()
+            counts[name] = counts.get(name, 0) + 1
+        except OSError:
+            continue  # processes are born and die constantly; skip the ghosts
+    return sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:limit]
+
+
+def render(root):
+    &quot;&quot;&quot;Build the sky and print it.&quot;&quot;&quot;
+    stars = collect_stars(root)[:250]  # even the sky has a fire code
+    pulsars = collect_pulsars()
+
+    # An empty grid of spaces; we will hang stars on it.
+    grid = [[&quot; &quot; for _ in range(WIDTH)] for _ in range(HEIGHT)]
+    occupied = set()
+
+    for name, size in stars:
+        x, y = sky_address(name)
+        # Collisions: two stars, one address. Nudge downward until free.
+        while (x, y) in occupied:
+            y = (y + 1) % HEIGHT
+        occupied.add((x, y))
+        grid[y][x] = BLUE + STAR_GLYPHS[magnitude(size)] + RESET
+
+    # Pulsars get the front row of the sky, left to right.
+    for i, (pname, count) in enumerate(pulsars):
+        x, y = i * 3 % WIDTH, 0
+        if (x, y) not in occupied:
+            grid[y][x] = YELLOW + PULSAR_GLYPH + RESET
+
+    total_bytes = sum(size for _, size in stars)
+    bar = TL + HLINE * WIDTH + TR
+    print(DIM + &quot;DARK SHIELD 0.1 &quot; + DOT + &quot; first light &quot; + DOT + &quot; &quot; + root + RESET)
+    print(DIM + bar + RESET)
+    for row in grid:
+        print(DIM + VLINE + RESET + &quot;&quot;.join(row) + DIM + VLINE + RESET)
+    print(DIM + BL + HLINE * WIDTH + BR + RESET)
+    print(f&quot;{DIM}{SPARK} {len(stars)} stars {DOT} {total_bytes:,} bytes of matter&quot;
+          f&quot; {DOT} {PULSAR_GLYPH} {len(pulsars)} pulsars burning{RESET}&quot;)
+    if pulsars:
+        loud = &quot;, &quot;.join(f&quot;{n}{TIMES}{c}&quot; for n, c in pulsars[:5])
+        print(f&quot;{DIM}  loudest pulsars: {loud}{RESET}&quot;)
+
+
+# ---------------------------------------------------------------------------
+# 3. The ignition: this runs only when you execute the file directly.
+# ---------------------------------------------------------------------------
+if __name__ == &quot;__main__&quot;:
+    target = sys.argv[1] if len(sys.argv) &gt; 1 else &quot;.&quot;
+    if not os.path.isdir(target):
+        print(f&quot;no such directory: {target}&quot;)
+        sys.exit(1)
+    # Module scope: plain assignment rebinds the globals above.
+    try:
+        &quot;&quot;.join(STAR_GLYPHS).encode(sys.stdout.encoding or &quot;utf-8&quot;)
+    except (UnicodeEncodeError, LookupError):
+        STAR_GLYPHS = &quot;.,*oO&quot;  # ASCII sky for older terminals
+        PULSAR_GLYPH = &quot;@&quot;
+        DOT, SPARK = &quot;.&quot;, &quot;*&quot;
+        HLINE, VLINE, TL, TR, BL, BR = &quot;-&quot;, &quot;|&quot;, &quot;+&quot;, &quot;+&quot;, &quot;+&quot;, &quot;+&quot;
+        TIMES = &quot;x&quot;
+    render(os.path.abspath(target))
+</code></pre>
+      <p><a href="https://github.com/jonesjordan012/dark-shield-os/tree/main/prototype">Browse the prototype folder &rarr;</a></p>
     </div>
   </section>
 
