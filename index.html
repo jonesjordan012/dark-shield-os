@@ -29,7 +29,7 @@
     z-index: 0;
     cursor: crosshair;
   }
-  main { position: relative; z-index: 1; }
+  main { position: relative; z-index: 1; pointer-events: none; }
   section {
     max-width: 760px;
     margin: 0 auto;
@@ -72,6 +72,7 @@
     backdrop-filter: blur(6px);
   }
   .card h2 { margin-top: 0; letter-spacing: 0.05em; color: var(--accent); }
+  .card, footer { pointer-events: auto; }
   .belief { margin: 1.1rem 0; }
   .belief strong { display: block; font-size: 1.05rem; }
   .belief p { margin: 0.25rem 0 0; color: var(--dim); }
