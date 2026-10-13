@@ -1,0 +1,43 @@
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<node name="/org/darkshield/afterburner">
+
+  <interface name="org.darkshield.Afterburner">
+
+    <method name="Ignite">
+      <arg name="universe_id" type="s" direction="in"/>
+      <arg name="intensity" type="s" direction="in"/>
+      <arg name="success" type="b" direction="out"/>
+    </method>
+
+    <method name="Throttle">
+      <arg name="universe_id" type="s" direction="in"/>
+      <arg name="factor" type="d" direction="in"/>
+    </method>
+
+    <method name="Shutdown">
+      <arg name="universe_id" type="s" direction="in"/>
+    </method>
+
+    <method name="GetAfterburnerMetrics">
+      <arg name="universe_id" type="s" direction="in"/>
+      <arg name="metrics" type="a{sv}" direction="out"/>
+    </method>
+
+    <signal name="AfterburnerStarted">
+      <arg name="universe_id" type="s"/>
+    </signal>
+
+    <signal name="AfterburnerCompleted">
+      <arg name="universe_id" type="s"/>
+    </signal>
+
+    <signal name="AfterburnerOverload">
+      <arg name="universe_id" type="s"/>
+    </signal>
+
+  </interface>
+
+</node>

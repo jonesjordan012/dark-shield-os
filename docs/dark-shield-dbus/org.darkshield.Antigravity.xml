@@ -1,0 +1,35 @@
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<node name="/org/darkshield/antigravity">
+
+  <interface name="org.darkshield.Antigravity">
+
+    <method name="PredictFuture">
+      <arg name="context" type="a{sv}" direction="in"/>
+      <arg name="future" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="ListCandidateFutures">
+      <arg name="target" type="s" direction="in"/>
+      <arg name="futures" type="aa{sv}" direction="out"/>
+    </method>
+
+    <method name="RankFuture">
+      <arg name="future_id" type="s" direction="in"/>
+      <arg name="ranking" type="d" direction="out"/>
+    </method>
+
+    <method name="EstimateRisk">
+      <arg name="future_id" type="s" direction="in"/>
+      <arg name="risk" type="d" direction="out"/>
+    </method>
+
+    <signal name="FutureDiscovered">
+      <arg name="future_id" type="s"/>
+    </signal>
+
+  </interface>
+
+</node>

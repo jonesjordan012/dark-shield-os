@@ -1,0 +1,90 @@
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<!--
+  Dark Shield D-Bus API v2 — Gravity
+  Error contract (org.darkshield.Error.*):
+    NotFound, InvalidUniverse, AnchorViolation,
+    ResourceExhausted, PermissionDenied, EclipseRequired
+  v2 change: GetGravityEdges returns a stable struct array a(ssd)
+  (source, target, weight) instead of loose dictionaries.
+-->
+
+<node name="/org/darkshield/gravity">
+
+  <interface name="org.darkshield.Gravity">
+
+    <method name="GetGravityScore">
+      <!-- Errors: org.darkshield.Error.NotFound -->
+      <arg name="node_id" type="s" direction="in"/>
+      <arg name="score" type="d" direction="out"/>
+    </method>
+
+    <method name="GetRelationships">
+      <!-- Errors: org.darkshield.Error.NotFound -->
+      <arg name="node_id" type="s" direction="in"/>
+      <arg name="relationships" type="aa{sv}" direction="out"/>
+    </method>
+
+    <method name="GetGravityEdges">
+      <!-- Stable struct form: (source, target, weight).
+           Errors: org.darkshield.Error.NotFound -->
+      <arg name="node_id" type="s" direction="in"/>
+      <arg name="edges" type="a(ssd)" direction="out"/>
+    </method>
+
+    <method name="FindClusters">
+      <!-- Errors: org.darkshield.Error.NotFound -->
+      <arg name="galaxy_id" type="s" direction="in"/>
+      <arg name="clusters" type="as" direction="out"/>
+    </method>
+
+    <method name="CalculateGravityField">
+      <arg name="nodes" type="as" direction="in"/>
+      <arg name="field" type="a{sv}" direction="out"/>
+    </method>
+
+    <signal name="GravityShiftDetected">
+      <arg name="node_id" type="s"/>
+      <arg name="delta" type="d"/>
+    </signal>
+
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Introspectable">
+    <method name="Introspect">
+      <arg name="xml_data" type="s" direction="out"/>
+    </method>
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Properties">
+    <method name="Get">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="property_name" type="s" direction="in"/>
+      <arg name="value" type="v" direction="out"/>
+    </method>
+    <method name="Set">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="property_name" type="s" direction="in"/>
+      <arg name="value" type="v" direction="in"/>
+    </method>
+    <method name="GetAll">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="properties" type="a{sv}" direction="out"/>
+    </method>
+    <signal name="PropertiesChanged">
+      <arg name="interface_name" type="s"/>
+      <arg name="changed_properties" type="a{sv}"/>
+      <arg name="invalidated_properties" type="as"/>
+    </signal>
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Peer">
+    <method name="Ping"/>
+    <method name="GetMachineId">
+      <arg name="machine_id" type="s" direction="out"/>
+    </method>
+  </interface>
+
+</node>

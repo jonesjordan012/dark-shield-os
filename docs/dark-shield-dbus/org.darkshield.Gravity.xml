@@ -1,0 +1,36 @@
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<node name="/org/darkshield/gravity">
+
+  <interface name="org.darkshield.Gravity">
+
+    <method name="GetGravityScore">
+      <arg name="node_id" type="s" direction="in"/>
+      <arg name="score" type="d" direction="out"/>
+    </method>
+
+    <method name="GetRelationships">
+      <arg name="node_id" type="s" direction="in"/>
+      <arg name="relationships" type="aa{sv}" direction="out"/>
+    </method>
+
+    <method name="FindClusters">
+      <arg name="galaxy_id" type="s" direction="in"/>
+      <arg name="clusters" type="as" direction="out"/>
+    </method>
+
+    <method name="CalculateGravityField">
+      <arg name="nodes" type="as" direction="in"/>
+      <arg name="field" type="a{sv}" direction="out"/>
+    </method>
+
+    <signal name="GravityShiftDetected">
+      <arg name="node_id" type="s"/>
+      <arg name="delta" type="d"/>
+    </signal>
+
+  </interface>
+
+</node>

@@ -1,0 +1,39 @@
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<node name="/org/darkshield/observatory">
+
+  <interface name="org.darkshield.Observatory">
+
+    <method name="GetMetrics">
+      <arg name="metrics" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="GetUniverseMetrics">
+      <arg name="universe_id" type="s" direction="in"/>
+      <arg name="metrics" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="GetPulsars">
+      <arg name="pulsars" type="aa{sv}" direction="out"/>
+    </method>
+
+    <method name="GetTemporalEchoes">
+      <arg name="universe_id" type="s" direction="in"/>
+      <arg name="echoes" type="aa{sv}" direction="out"/>
+    </method>
+
+    <signal name="AnomalyDetected">
+      <arg name="universe_id" type="s"/>
+      <arg name="category" type="s"/>
+    </signal>
+
+    <signal name="MetricThresholdExceeded">
+      <arg name="metric" type="s"/>
+      <arg name="value" type="d"/>
+    </signal>
+
+  </interface>
+
+</node>

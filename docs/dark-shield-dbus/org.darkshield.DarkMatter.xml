@@ -1,0 +1,36 @@
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<node name="/org/darkshield/darkmatter">
+
+  <interface name="org.darkshield.DarkMatter">
+
+    <method name="RevealDependencies">
+      <arg name="object_id" type="s" direction="in"/>
+      <arg name="dependencies" type="as" direction="out"/>
+    </method>
+
+    <method name="RevealHistory">
+      <arg name="object_id" type="s" direction="in"/>
+      <arg name="history" type="aa{sv}" direction="out"/>
+    </method>
+
+    <method name="RevealPermissionGraph">
+      <arg name="object_id" type="s" direction="in"/>
+      <arg name="permissions" type="aa{sv}" direction="out"/>
+    </method>
+
+    <method name="GetDarkMatterScore">
+      <arg name="object_id" type="s" direction="in"/>
+      <arg name="score" type="d" direction="out"/>
+    </method>
+
+    <signal name="HiddenRelationshipDiscovered">
+      <arg name="source" type="s"/>
+      <arg name="target" type="s"/>
+    </signal>
+
+  </interface>
+
+</node>

@@ -1,0 +1,80 @@
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<!--
+  Dark Shield D-Bus API v2 — Eclipse
+  Error contract (org.darkshield.Error.*):
+    NotFound, InvalidUniverse, AnchorViolation,
+    ResourceExhausted, PermissionDenied, EclipseRequired
+-->
+
+<node name="/org/darkshield/eclipse">
+
+  <interface name="org.darkshield.Eclipse">
+
+    <method name="DetectEclipse">
+      <arg name="eclipse" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="GetActiveEclipses">
+      <arg name="eclipses" type="aa{sv}" direction="out"/>
+    </method>
+
+    <method name="GetTwinkles">
+      <arg name="twinkles" type="aa{sv}" direction="out"/>
+    </method>
+
+    <method name="GetEvolutionPotential">
+      <!-- Errors: org.darkshield.Error.NotFound -->
+      <arg name="galaxy_id" type="s" direction="in"/>
+      <arg name="score" type="d" direction="out"/>
+    </method>
+
+    <signal name="EclipseDetected">
+      <arg name="eclipse_id" type="s"/>
+      <arg name="strength" type="d"/>
+    </signal>
+
+    <signal name="EclipseEnded">
+      <arg name="eclipse_id" type="s"/>
+    </signal>
+
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Introspectable">
+    <method name="Introspect">
+      <arg name="xml_data" type="s" direction="out"/>
+    </method>
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Properties">
+    <method name="Get">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="property_name" type="s" direction="in"/>
+      <arg name="value" type="v" direction="out"/>
+    </method>
+    <method name="Set">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="property_name" type="s" direction="in"/>
+      <arg name="value" type="v" direction="in"/>
+    </method>
+    <method name="GetAll">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="properties" type="a{sv}" direction="out"/>
+    </method>
+    <signal name="PropertiesChanged">
+      <arg name="interface_name" type="s"/>
+      <arg name="changed_properties" type="a{sv}"/>
+      <arg name="invalidated_properties" type="as"/>
+    </signal>
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Peer">
+    <method name="Ping"/>
+    <method name="GetMachineId">
+      <arg name="machine_id" type="s" direction="out"/>
+    </method>
+  </interface>
+
+</node>

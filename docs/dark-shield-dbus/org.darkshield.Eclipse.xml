@@ -1,0 +1,37 @@
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<node name="/org/darkshield/eclipse">
+
+  <interface name="org.darkshield.Eclipse">
+
+    <method name="DetectEclipse">
+      <arg name="eclipse" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="GetActiveEclipses">
+      <arg name="eclipses" type="aa{sv}" direction="out"/>
+    </method>
+
+    <method name="GetTwinkles">
+      <arg name="twinkles" type="aa{sv}" direction="out"/>
+    </method>
+
+    <method name="GetEvolutionPotential">
+      <arg name="galaxy_id" type="s" direction="in"/>
+      <arg name="score" type="d" direction="out"/>
+    </method>
+
+    <signal name="EclipseDetected">
+      <arg name="eclipse_id" type="s"/>
+      <arg name="strength" type="d"/>
+    </signal>
+
+    <signal name="EclipseEnded">
+      <arg name="eclipse_id" type="s"/>
+    </signal>
+
+  </interface>
+
+</node>

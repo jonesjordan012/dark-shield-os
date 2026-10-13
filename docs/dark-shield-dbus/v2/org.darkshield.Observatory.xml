@@ -1,0 +1,90 @@
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<!--
+  Dark Shield D-Bus API v2 — Observatory
+  Error contract (org.darkshield.Error.*):
+    NotFound, InvalidUniverse, AnchorViolation,
+    ResourceExhausted, PermissionDenied, EclipseRequired
+  v2 change: GetPulsarLoad returns a stable struct array a(sddd)
+  (pulsar_id, cpu, memory, io) for the hot metric path.
+-->
+
+<node name="/org/darkshield/observatory">
+
+  <interface name="org.darkshield.Observatory">
+
+    <method name="GetMetrics">
+      <arg name="metrics" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="GetUniverseMetrics">
+      <!-- Errors: org.darkshield.Error.NotFound -->
+      <arg name="universe_id" type="s" direction="in"/>
+      <arg name="metrics" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="GetPulsars">
+      <arg name="pulsars" type="aa{sv}" direction="out"/>
+    </method>
+
+    <method name="GetPulsarLoad">
+      <!-- Stable struct form: (pulsar_id, cpu, memory, io). -->
+      <arg name="pulsars" type="a(sddd)" direction="out"/>
+    </method>
+
+    <method name="GetTemporalEchoes">
+      <!-- Errors: org.darkshield.Error.NotFound -->
+      <arg name="universe_id" type="s" direction="in"/>
+      <arg name="echoes" type="aa{sv}" direction="out"/>
+    </method>
+
+    <signal name="AnomalyDetected">
+      <arg name="universe_id" type="s"/>
+      <arg name="category" type="s"/>
+    </signal>
+
+    <signal name="MetricThresholdExceeded">
+      <arg name="metric" type="s"/>
+      <arg name="value" type="d"/>
+    </signal>
+
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Introspectable">
+    <method name="Introspect">
+      <arg name="xml_data" type="s" direction="out"/>
+    </method>
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Properties">
+    <method name="Get">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="property_name" type="s" direction="in"/>
+      <arg name="value" type="v" direction="out"/>
+    </method>
+    <method name="Set">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="property_name" type="s" direction="in"/>
+      <arg name="value" type="v" direction="out"/>
+    </method>
+    <method name="GetAll">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="properties" type="a{sv}" direction="out"/>
+    </method>
+    <signal name="PropertiesChanged">
+      <arg name="interface_name" type="s"/>
+      <arg name="changed_properties" type="a{sv}"/>
+      <arg name="invalidated_properties" type="as"/>
+    </signal>
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Peer">
+    <method name="Ping"/>
+    <method name="GetMachineId">
+      <arg name="machine_id" type="s" direction="out"/>
+    </method>
+  </interface>
+
+</node>

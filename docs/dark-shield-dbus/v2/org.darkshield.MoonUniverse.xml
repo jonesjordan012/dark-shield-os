@@ -1,0 +1,92 @@
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<!--
+  Dark Shield D-Bus API v2 — MoonUniverse (per-moon dynamic object)
+  Object path template: /org/darkshield/moons/<moon_id>
+  Example: /org/darkshield/moons/moon0091
+  Error contract (org.darkshield.Error.*):
+    NotFound, InvalidUniverse, AnchorViolation,
+    ResourceExhausted, PermissionDenied, EclipseRequired
+  v2 change: dynamic per-universe objects replace the singleton-only model.
+  Each Moon Universe gets its own object path and lifecycle interface.
+-->
+
+<node name="/org/darkshield/moons/moon0091">
+
+  <interface name="org.darkshield.MoonUniverse">
+
+    <method name="GetStatus">
+      <arg name="status" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="GetMetrics">
+      <arg name="metrics" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="Pause">
+      <!-- Errors: org.darkshield.Error.InvalidUniverse -->
+    </method>
+
+    <method name="Resume">
+      <!-- Errors: org.darkshield.Error.InvalidUniverse -->
+    </method>
+
+    <method name="Destroy">
+      <!-- Errors: org.darkshield.Error.InvalidUniverse, org.darkshield.Error.PermissionDenied -->
+    </method>
+
+    <property name="UniverseId" type="s" access="read"/>
+    <property name="Strategy" type="s" access="read"/>
+    <property name="State" type="s" access="read"/>
+
+    <signal name="Failed">
+      <arg name="reason" type="s"/>
+    </signal>
+
+    <signal name="ReadyForPromotion">
+    </signal>
+
+    <signal name="MetricsUpdated">
+      <arg name="metrics" type="a{sv}"/>
+    </signal>
+
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Introspectable">
+    <method name="Introspect">
+      <arg name="xml_data" type="s" direction="out"/>
+    </method>
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Properties">
+    <method name="Get">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="property_name" type="s" direction="in"/>
+      <arg name="value" type="v" direction="out"/>
+    </method>
+    <method name="Set">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="property_name" type="s" direction="in"/>
+      <arg name="value" type="v" direction="out"/>
+    </method>
+    <method name="GetAll">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="properties" type="a{sv}" direction="out"/>
+    </method>
+    <signal name="PropertiesChanged">
+      <arg name="interface_name" type="s"/>
+      <arg name="changed_properties" type="a{sv}"/>
+      <arg name="invalidated_properties" type="as"/>
+    </signal>
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Peer">
+    <method name="Ping"/>
+    <method name="GetMachineId">
+      <arg name="machine_id" type="s" direction="out"/>
+    </method>
+  </interface>
+
+</node>

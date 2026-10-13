@@ -1,0 +1,114 @@
+<!DOCTYPE node PUBLIC
+"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<!--
+  Dark Shield D-Bus API v2 — Moonlight
+  Error contract (org.darkshield.Error.*):
+    NotFound, InvalidUniverse, AnchorViolation,
+    ResourceExhausted, PermissionDenied, EclipseRequired
+  v2 change: PromoteUniverse replaced by RequestPromotion.
+  Promotion handshake (single ownership per operation):
+    Moonlight.RequestPromotion  → opens a promotion request
+    Consensus.EvaluatePromotion → evaluates the candidate
+    Anchor.ApprovePromotion     → approves or rejects
+-->
+
+<node name="/org/darkshield/moonlight">
+
+  <interface name="org.darkshield.Moonlight">
+
+    <method name="CreateUniverse">
+      <!-- Errors: org.darkshield.Error.ResourceExhausted, org.darkshield.Error.PermissionDenied -->
+      <arg name="template" type="s" direction="in"/>
+      <arg name="strategy" type="s" direction="in"/>
+      <arg name="universe_id" type="s" direction="out"/>
+    </method>
+
+    <method name="DestroyUniverse">
+      <!-- Errors: org.darkshield.Error.NotFound, org.darkshield.Error.InvalidUniverse -->
+      <arg name="universe_id" type="s" direction="in"/>
+    </method>
+
+    <method name="PauseUniverse">
+      <!-- Errors: org.darkshield.Error.NotFound, org.darkshield.Error.InvalidUniverse -->
+      <arg name="universe_id" type="s" direction="in"/>
+    </method>
+
+    <method name="ResumeUniverse">
+      <!-- Errors: org.darkshield.Error.NotFound, org.darkshield.Error.InvalidUniverse -->
+      <arg name="universe_id" type="s" direction="in"/>
+    </method>
+
+    <method name="GetUniverseStatus">
+      <!-- Errors: org.darkshield.Error.NotFound -->
+      <arg name="universe_id" type="s" direction="in"/>
+      <arg name="status" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="ListUniverses">
+      <arg name="universes" type="as" direction="out"/>
+    </method>
+
+    <method name="RequestPromotion">
+      <!-- Opens a promotion request; does NOT approve it.
+           Errors: org.darkshield.Error.NotFound, org.darkshield.Error.InvalidUniverse -->
+      <arg name="universe_id" type="s" direction="in"/>
+      <arg name="request_id" type="s" direction="out"/>
+    </method>
+
+    <signal name="UniverseCreated">
+      <arg name="universe_id" type="s"/>
+    </signal>
+
+    <signal name="UniverseFailed">
+      <arg name="universe_id" type="s"/>
+    </signal>
+
+    <signal name="UniverseReadyForPromotion">
+      <arg name="universe_id" type="s"/>
+    </signal>
+
+    <signal name="PromotionRequested">
+      <arg name="request_id" type="s"/>
+      <arg name="universe_id" type="s"/>
+    </signal>
+
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Introspectable">
+    <method name="Introspect">
+      <arg name="xml_data" type="s" direction="out"/>
+    </method>
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Properties">
+    <method name="Get">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="property_name" type="s" direction="in"/>
+      <arg name="value" type="v" direction="out"/>
+    </method>
+    <method name="Set">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="property_name" type="s" direction="in"/>
+      <arg name="value" type="v" direction="in"/>
+    </method>
+    <method name="GetAll">
+      <arg name="interface_name" type="s" direction="in"/>
+      <arg name="properties" type="a{sv}" direction="out"/>
+    </method>
+    <signal name="PropertiesChanged">
+      <arg name="interface_name" type="s"/>
+      <arg name="changed_properties" type="a{sv}"/>
+      <arg name="invalidated_properties" type="as"/>
+    </signal>
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Peer">
+    <method name="Ping"/>
+    <method name="GetMachineId">
+      <arg name="machine_id" type="s" direction="out"/>
+    </method>
+  </interface>
+
+</node>
