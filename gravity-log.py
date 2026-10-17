@@ -33,6 +33,7 @@ import os
 import sqlite3
 import sys
 import time
+from temporal_echo import record_echo
 
 DB_NAME = "gravity.db"
 MAX_FILES = 40  # even gravity has a fire code
@@ -75,10 +76,14 @@ def log_pair(conn, a, b):
     if a == b:
         return  # a file has no gravity with itself
     a, b = sorted([a, b])
+    before = conn.execute(
+        "SELECT COUNT(*) FROM pairs WHERE file_a=? AND file_b=?",
+        (a, b)).fetchone()[0]
     conn.execute(
         "INSERT INTO pairs (file_a, file_b, ts) VALUES (?, ?, ?)",
         (a, b, time.time()),
     )
+    record_echo(f"{a} <-> {b}", "observed", before, before + 1)
 
 
 def scan(hours=6):

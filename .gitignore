@@ -17,3 +17,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+gravity.db
+gravity
+skyrank.db
+temporal-echoes.jsonl
