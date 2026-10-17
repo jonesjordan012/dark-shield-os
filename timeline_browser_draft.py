@@ -35,8 +35,17 @@ def parse_args():
     return p.parse_args()
 
 
+REQUIRED_FIELDS = ("timestamp", "object", "event",
+                   "gravity_before", "gravity_after")
+
+
 def load_echoes(path):
-    """Read all echoes from the JSONL log. Returns list of dicts."""
+    """Read all echoes from the JSONL log. Returns list of dicts.
+
+    Skips lines that are not valid JSON or do not have the echo schema.
+    A reader must not crash on a corrupt log; history is append-only
+    and readers adapt.
+    """
     echoes = []
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -45,9 +54,15 @@ def load_echoes(path):
                 if not line:
                     continue
                 try:
-                    echoes.append(json.loads(line))
-                except json.JSONDecodeError:
-                    print(f"Warning: skipping malformed line {line_num}",
+                    e = json.loads(line)
+                    if not isinstance(e, dict):
+                        raise ValueError("not a JSON object")
+                    for field in REQUIRED_FIELDS:
+                        if field not in e:
+                            raise ValueError(f"missing field: {field}")
+                    echoes.append(e)
+                except (json.JSONDecodeError, ValueError) as exc:
+                    print(f"Warning: skipping malformed line {line_num}: {exc}",
                           file=sys.stderr)
     except FileNotFoundError:
         print(f"No echo log found at {path}", file=sys.stderr)
@@ -64,13 +79,16 @@ def format_time(iso_str):
         return "?"
 
 
-def format_ago(iso_str):
-    """Human-readable relative time ('3h ago')."""
+def format_ago(iso_str, now=None):
+    """Human-readable relative time ('3h ago').
+
+    `now` is a datetime for testability; defaults to the actual present.
+    """
     try:
         dt = datetime.fromisoformat(iso_str)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
-        now = datetime.now(timezone.utc)
+        now = now if now is not None else datetime.now(timezone.utc)
         delta = now - dt
         seconds = int(delta.total_seconds())
         if seconds < 0:

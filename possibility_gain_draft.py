@@ -98,6 +98,31 @@ def pin_counts(log_path):
     return pins
 
 
+def all_observed_objects(log_path):
+    """Every object name ever seen in the echo log (by basename).
+
+    RULED 2026-10-17: observation creates visibility, not score.
+    Objects with no bonds and no pins appear as CANDIDATE with score 0,
+    rather than vanishing from the possibility ontology.
+    """
+    objects = set()
+    if not os.path.isfile(log_path):
+        return objects
+    with open(log_path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                e = json.loads(line)
+                obj = str(e.get("object", ""))
+                if obj:
+                    objects.add(os.path.basename(obj))
+            except (json.JSONDecodeError, KeyError, TypeError):
+                continue
+    return objects
+
+
 def lifecycle_state(score):
     if score >= GRADUATION_THRESHOLD:
         return "GRADUATED"
@@ -119,8 +144,10 @@ def main():
     bonds = bond_counts(gpath)
     pins = pin_counts(args.log)
 
-    # Every object known to either source gets a score.
-    objects = set(bonds) | set(pins)
+    # RULED 2026-10-17: the population is every object ever observed,
+    # not just those with bonds or pins. Observation creates visibility
+    # (CANDIDATE state), not score. The formula is unchanged.
+    objects = set(bonds) | set(pins) | all_observed_objects(args.log)
 
     rows = []
     for obj in objects:
