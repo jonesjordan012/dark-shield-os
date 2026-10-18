@@ -59,9 +59,9 @@ def test_formula_is_bonds_plus_pins(tmp_path, capsys, monkeypatch):
     assert "a.txt" in out
 
 
-def test_returns_are_zero_and_disclosed(tmp_path, capsys, monkeypatch):
-    """The spec says returns are pending instrumentation. The tool must
-    say so, not silently compute them."""
+def test_returns_measured_from_sessions(tmp_path, capsys, monkeypatch):
+    """RULED 2026-10-17: returns are derived from echo-log sessions.
+    The output must show the session gap, not a pending notice."""
     db = tmp_path / "gravity.db"
     make_db(db, [])
     log = tmp_path / "e.jsonl"
@@ -71,7 +71,8 @@ def test_returns_are_zero_and_disclosed(tmp_path, capsys, monkeypatch):
                          "--log", str(log), "--db", str(db)])
     pg.main()
     out = capsys.readouterr().out
-    assert "pending instrumentation" in out
+    assert "pending instrumentation" not in out
+    assert "inactivity gap" in out
 
 
 def test_lifecycle_graduated(tmp_path):
@@ -177,3 +178,78 @@ def test_all_observed_objects(tmp_path):
 
 def test_all_observed_objects_missing_log(tmp_path):
     assert pg.all_observed_objects(str(tmp_path / "absent.jsonl")) == set()
+
+
+def test_sessions_single_session_no_return(tmp_path):
+    """Three echoes within the hour: one session, zero returns."""
+    from datetime import timedelta
+    log = tmp_path / "e.jsonl"
+    base = datetime(2026, 10, 17, 9, 0, tzinfo=timezone.utc)
+    write_log(log, [echo("a.txt", "observed", 0.0, 0.0)
+                    for _ in range(3)])
+    # All echoes share NOW; rewrite with staggered times inside the gap.
+    echoes = []
+    for i, minutes in enumerate([0, 20, 45]):
+        e = echo("a.txt", "observed", 0.0, 0.0)
+        e["timestamp"] = iso(base + timedelta(minutes=minutes))
+        echoes.append(e)
+    write_log(log, echoes)
+    result = pg.session_counts(str(log), gap_minutes=60)
+    assert result["a.txt"] == (1, 0)
+
+
+def test_sessions_gap_starts_new_session(tmp_path):
+    """Echoes 90 minutes apart: two sessions, one return."""
+    from datetime import timedelta
+    log = tmp_path / "e.jsonl"
+    base = datetime(2026, 10, 17, 9, 0, tzinfo=timezone.utc)
+    echoes = []
+    for minutes in [0, 90, 200]:
+        e = echo("a.txt", "observed", 0.0, 0.0)
+        e["timestamp"] = iso(base + timedelta(minutes=minutes))
+        echoes.append(e)
+    write_log(log, echoes)
+    result = pg.session_counts(str(log), gap_minutes=60)
+    assert result["a.txt"] == (3, 2)
+
+
+def test_sessions_custom_gap(tmp_path):
+    """A tighter gap splits more aggressively."""
+    from datetime import timedelta
+    log = tmp_path / "e.jsonl"
+    base = datetime(2026, 10, 17, 9, 0, tzinfo=timezone.utc)
+    echoes = []
+    for minutes in [0, 30]:
+        e = echo("a.txt", "observed", 0.0, 0.0)
+        e["timestamp"] = iso(base + timedelta(minutes=minutes))
+        echoes.append(e)
+    write_log(log, echoes)
+    assert pg.session_counts(str(log), gap_minutes=60)["a.txt"] == (1, 0)
+    assert pg.session_counts(str(log), gap_minutes=15)["a.txt"] == (2, 1)
+
+
+def test_sessions_missing_log(tmp_path):
+    assert pg.session_counts(str(tmp_path / "absent.jsonl")) == {}
+
+
+def test_returns_weight_in_formula(tmp_path, capsys, monkeypatch):
+    """2 returns x3 = 6 points. Session-derived returns flow into score."""
+    from datetime import timedelta
+    db = tmp_path / "gravity.db"
+    make_db(db, [])
+    log = tmp_path / "e.jsonl"
+    base = datetime(2026, 10, 17, 9, 0, tzinfo=timezone.utc)
+    echoes = []
+    for minutes in [0, 90, 200]:  # 3 sessions -> 2 returns
+        e = echo("loyal.txt", "observed", 0.0, 0.0)
+        e["timestamp"] = iso(base + timedelta(minutes=minutes))
+        echoes.append(e)
+    write_log(log, echoes)
+    monkeypatch.setattr(sys, "argv",
+                        ["possibility_gain_draft.py",
+                         "--log", str(log), "--db", str(db)])
+    pg.main()
+    out = capsys.readouterr().out
+    # loyal.txt: 0 bonds + 2 returns x3 + 0 pins = 6
+    assert "loyal.txt" in out
+    assert "OBSERVED" in out

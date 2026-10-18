@@ -6,10 +6,15 @@ Possibility Gain evaluates exploratory events per object:
     PossibilityGain = (bonds x 1) + (returns x 3) + (pins x 10)
 
 RULED 2026-10-15 (canon). Weights and thresholds are universe policy,
-tunable from birth. This draft implements what is measurable today:
-  - bonds_created: from gravity.db (implemented)
-  - pins_received: from temporal-echoes.jsonl (implemented)
-  - returns:       PENDING INSTRUMENTATION (sensor not built yet)
+tunable from birth. All three inputs are now measured:
+  - bonds_created: from gravity.db (bond counts)
+  - pins_received: from temporal-echoes.jsonl (pinned events)
+  - returns:       from temporal-echoes.jsonl (attention sessions)
+
+RULED 2026-10-17: a return is any observation of an object in a new
+attention session after its initial session. Sessions are grouped by
+inactivity gap (default 60 minutes). return_count = session_count - 1.
+No new event types. No watchers. Derived from echoes alone.
 
 Lifecycle:
     Candidate  (score 0 -- introduced, no evidence yet)
@@ -29,6 +34,7 @@ import json
 import os
 import sqlite3
 import sys
+from datetime import datetime, timezone
 
 # --- Universe policy (tunable from birth, per the ruled spec) ---
 BOND_WEIGHT = 1
@@ -36,6 +42,7 @@ RETURN_WEIGHT = 3
 PIN_WEIGHT = 10
 GRADUATION_THRESHOLD = 25
 OBSERVATION_WINDOW_DAYS = 30  # not enforced in v0.1; recorded for the reaper
+SESSION_GAP_MINUTES = 60  # inactivity gap that starts a new attention session
 
 DEFAULT_LOG = "temporal-echoes.jsonl"
 
@@ -131,6 +138,51 @@ def lifecycle_state(score):
     return "CANDIDATE"
 
 
+def session_counts(log_path, gap_minutes=SESSION_GAP_MINUTES):
+    """Group each object's echoes into attention sessions.
+
+    RULED 2026-10-17: a return is an observation in a new session after
+    the initial session. A new session starts when the gap between
+    consecutive echoes for the same object exceeds gap_minutes.
+
+    Returns {basename: (session_count, return_count)} where
+    return_count = max(0, session_count - 1).
+    """
+    # Collect timestamps per object.
+    times = {}
+    if not os.path.isfile(log_path):
+        return {}
+    with open(log_path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                e = json.loads(line)
+                obj = str(e.get("object", ""))
+                ts_raw = e.get("timestamp", "")
+                if not obj or not ts_raw:
+                    continue
+                dt = datetime.fromisoformat(ts_raw)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                base = os.path.basename(obj)
+                times.setdefault(base, []).append(dt.timestamp())
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                continue
+
+    gap_seconds = gap_minutes * 60
+    result = {}
+    for base, stamps in times.items():
+        stamps.sort()
+        sessions = 1
+        for prev, curr in zip(stamps, stamps[1:]):
+            if curr - prev > gap_seconds:
+                sessions += 1
+        result[base] = (sessions, max(0, sessions - 1))
+    return result
+
+
 def main():
     p = argparse.ArgumentParser(
         description="Compute Possibility Gain per object.")
@@ -138,11 +190,15 @@ def main():
                    help="Path to echo log (default: temporal-echoes.jsonl)")
     p.add_argument("--db", default=None,
                    help="Path to gravity.db (auto-detected if omitted)")
+    p.add_argument("--session-gap", type=int, default=SESSION_GAP_MINUTES,
+                   help="Minutes of inactivity that start a new attention "
+                        f"session (default: {SESSION_GAP_MINUTES})")
     args = p.parse_args()
 
     gpath = gravity_db_path(args.db)
     bonds = bond_counts(gpath)
     pins = pin_counts(args.log)
+    sessions = session_counts(args.log, gap_minutes=args.session_gap)
 
     # RULED 2026-10-17: the population is every object ever observed,
     # not just those with bonds or pins. Observation creates visibility
@@ -152,7 +208,7 @@ def main():
     rows = []
     for obj in objects:
         b = bonds.get(obj, 0)
-        r = 0  # returns: pending instrumentation
+        _, r = sessions.get(obj, (1, 0))
         pn = pins.get(obj, 0)
         score = b * BOND_WEIGHT + r * RETURN_WEIGHT + pn * PIN_WEIGHT
         rows.append((obj, b, r, pn, score, lifecycle_state(score)))
@@ -163,7 +219,8 @@ def main():
     print(f"Weights: bonds x{BOND_WEIGHT}  returns x{RETURN_WEIGHT}  "
           f"pins x{PIN_WEIGHT}   |   Graduation threshold: "
           f"{GRADUATION_THRESHOLD}")
-    print("Returns: pending instrumentation (counted as 0).\n")
+    print(f"Sessions: {args.session_gap}-minute inactivity gap; "
+          f"returns = sessions - 1.\n")
 
     print(f"{'score':>6}  {'state':<9}  {'bnd':>3}  {'ret':>3}  "
           f"{'pin':>3}  object")
