@@ -135,6 +135,37 @@ class Universe:
         """Top entities by gravity (M2-F name for top_gravity)."""
         return self.top_gravity(n)
 
+    # -- M3-A: declared labels ------------------------------------------
+
+    def _find_galaxy(self, galaxy_id: str):
+        from .entities import Galaxy
+
+        for node in self.nodes:
+            if node.id == galaxy_id and isinstance(node, Galaxy):
+                return node
+        return None
+
+    def declare_label(self, galaxy_id: str, label: str):
+        """Record a user-declared label on a galaxy (M3-A, Amendment A).
+
+        Labels are declarations, not discoveries: this is the ONLY way a
+        label enters the universe. The system never infers one.
+        Raises ValueError for an unknown galaxy id.
+        """
+        galaxy = self._find_galaxy(galaxy_id)
+        if galaxy is None:
+            raise ValueError(f"unknown galaxy: {galaxy_id}")
+        galaxy.declare_label(label)
+        self.snapshot_at = _now()
+        return galaxy
+
+    def labels(self, galaxy_id: str) -> list[str] | None:
+        """The galaxy's declared labels, or None for an unknown galaxy."""
+        galaxy = self._find_galaxy(galaxy_id)
+        if galaxy is None:
+            return None
+        return list(galaxy.labels)
+
     def explain_entity(self, entity_id: str) -> str | None:
         """Human-readable summary of an entity's place in the universe.
 

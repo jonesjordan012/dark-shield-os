@@ -1,6 +1,14 @@
 ﻿"""Dark Shield canonical universe (M1) + data gravity engine (M2)."""
 
-from .entities import Entity, Galaxy, NeutronStar, Pulsar, Star
+from .entities import (
+    GALAXY_FATES,
+    GALAXY_STATES,
+    Entity,
+    Galaxy,
+    NeutronStar,
+    Pulsar,
+    Star,
+)
 from .gravity import (
     EVIDENCE_TYPES,
     FORMULA_M2A_V1,
@@ -24,6 +32,8 @@ __all__ = [
     "Pulsar",
     "NeutronStar",
     "Galaxy",
+    "GALAXY_STATES",
+    "GALAXY_FATES",
     "Relationship",
     "RELATION_TYPES",
     "Universe",
