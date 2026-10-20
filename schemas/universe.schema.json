@@ -235,29 +235,71 @@
       "additionalProperties": true
     },
     "historyEvent": {
-      "type": "object",
-      "required": [
-        "entity_id",
-        "event",
-        "timestamp"
-      ],
-      "properties": {
-        "timestamp": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "entity_id": {
-          "type": "string"
-        },
-        "event": {
-          "type": "string"
-        },
-        "data": {
+      "description": "Two legal shapes: the M1 legacy event and the enveloped event (RAC-002 Section 7 / DG-0). Legacy files validate unchanged.",
+      "anyOf": [
+        {
           "type": "object",
+          "required": [
+            "entity_id",
+            "event",
+            "timestamp"
+          ],
+          "properties": {
+            "timestamp": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "entity_id": {
+              "type": "string"
+            },
+            "event": {
+              "type": "string"
+            },
+            "data": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "event_id",
+            "event_type",
+            "timestamp",
+            "schema_version"
+          ],
+          "properties": {
+            "event_id": {
+              "type": "string"
+            },
+            "event_type": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "schema_version": {
+              "type": "string"
+            },
+            "scanner_version": {
+              "type": "string"
+            },
+            "observation_id": {
+              "type": "string"
+            },
+            "entity_id": {
+              "type": "string"
+            },
+            "star_id": {
+              "type": "string"
+            }
+          },
           "additionalProperties": true
         }
-      },
-      "additionalProperties": false
+      ]
     },
     "metrics": {
       "type": "object",

@@ -19,6 +19,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
 from .entities import Entity
 from .relations import Relationship
@@ -55,8 +56,35 @@ class Universe:
     def add_galaxy(self, galaxy: Entity) -> Entity:
         return self.add(galaxy)
 
-    def add_relationship(self, rel: Relationship) -> Relationship:
-        """Add a relationship. Endpoints must exist (UC-3)."""
+    def _emit_history(
+        self,
+        event_type: str,
+        entity_id: str,
+        fields: dict,
+        context: dict | None = None,
+    ) -> dict:
+        """Append an enveloped history event (DG-0 / RAC-002 shape)."""
+        entry: dict = {
+            "event_id": f"evt:{uuid4().hex}",
+            "event_type": event_type,
+            "timestamp": _now().isoformat(),
+            "schema_version": "1.0",
+            "entity_id": entity_id,
+        }
+        entry.update(fields)
+        if context:
+            entry.update(context)
+        self.history.append(entry)
+        return entry
+
+    def add_relationship(
+        self, rel: Relationship, *, context: dict | None = None
+    ) -> Relationship:
+        """Add a relationship. Endpoints must exist (UC-3).
+
+        DG-0: relationships have biographies — creation is recorded
+        as a gravity_created history event.
+        """
         node_ids = {n.id for n in self.nodes}
         if rel.source not in node_ids:
             raise ValueError(f"relationship source missing: {rel.source}")
@@ -65,8 +93,88 @@ class Universe:
         if any(r.id == rel.id for r in self.relationships):
             raise ValueError(f"duplicate relationship id: {rel.id}")
         self.relationships.append(rel)
+        self._emit_history(
+            "gravity_created",
+            rel.id,
+            {
+                "gravity_id": rel.id,
+                "source_id": rel.source,
+                "target_id": rel.target,
+                "relationship_type": rel.relation,
+            },
+            context,
+        )
         self.snapshot_at = _now()
         return rel
+
+    def attach_evidence(
+        self, relationship_id: str, evidence, *, context: dict | None = None
+    ) -> Relationship:
+        """Attach evidence to a relationship, recording gravity_updated.
+
+        DG-0: an evidence change is part of the relationship's
+        biography, not silent state.
+        """
+        rel = self.get_gravity(relationship_id)
+        if rel is None:
+            raise ValueError(f"unknown relationship: {relationship_id}")
+        rel.attach_evidence(evidence)
+        self._emit_history(
+            "gravity_updated",
+            rel.id,
+            {
+                "gravity_id": rel.id,
+                "evidence_source": evidence.source,
+                "gravity": rel.gravity(),
+            },
+            context,
+        )
+        self.snapshot_at = _now()
+        return rel
+
+    def remove_relationship(
+        self, relationship_id: str, *, context: dict | None = None
+    ) -> Relationship | None:
+        """Remove a relationship from the active graph (DG-0).
+
+        "Removed" means no longer present — never erased. The
+        gravity_removed event, and the relationship's whole history,
+        remain on the record.
+        """
+        rel = self.get_gravity(relationship_id)
+        if rel is None:
+            return None
+        self.relationships.remove(rel)
+        self._emit_history(
+            "gravity_removed",
+            rel.id,
+            {
+                "gravity_id": rel.id,
+                "source_id": rel.source,
+                "target_id": rel.target,
+                "relationship_type": rel.relation,
+            },
+            context,
+        )
+        self.snapshot_at = _now()
+        return rel
+
+    # -- DG-0 query API (Section 11) -------------------------------------
+
+    def get_relationships(self, entity_id: str) -> list[Relationship]:
+        """All relationships touching an entity."""
+        return self.related_to(entity_id)
+
+    def get_gravity(self, relationship_id: str) -> Relationship | None:
+        """The relationship with this independent identity, or None."""
+        return next(
+            (r for r in self.relationships if r.id == relationship_id), None
+        )
+
+    def explain_relationship(self, relationship_id: str):
+        """Explanation for a relationship, addressed by its own id."""
+        rel = self.get_gravity(relationship_id)
+        return rel.explain() if rel is not None else None
 
     def record(self, entity_id: str, event: str, data: dict | None = None) -> dict:
         """Append a history fact (facts, not visualizations)."""

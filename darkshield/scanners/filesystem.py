@@ -207,17 +207,21 @@ def scan_filesystem(
             confidence=1.0,
             details=f"observed at {star.path} during filesystem scan",
         )
+        context = {
+            "observation_id": observation_id,
+            "scanner_version": SCANNER_VERSION,
+        }
         existing = universe.find_relationship(galaxy.id, star.id)
         if existing is not None and existing.relation == "contains":
-            existing.attach_evidence(evidence)
+            universe.attach_evidence(existing.id, evidence, context=context)
         else:
             universe.add_relationship(Relationship(
-                id=_mint("rel"),
+                id=_mint("gravity"),
                 source=galaxy.id,
                 target=star.id,
                 relation="contains",
                 evidence=[evidence],
-            ))
+            ), context=context)
 
     def note_return(star: Star) -> None:
         if star.id in departed:
