@@ -68,9 +68,6 @@ SKIP_DIRS = frozenset({
     "System Volume Information",
 })
 
-_PRESENCE_EVENTS = {"star_birth", "star_departure", "star_rediscovery"}
-
-
 def _mint(prefix: str) -> str:
     return f"{prefix}:{uuid4().hex}"
 
@@ -111,26 +108,6 @@ def _observe(root: Path, hash_files: bool) -> list[dict]:
                 "sha256": _hash_file(path) if hash_files else None,
             })
     return observations
-
-
-def _departed_star_ids(universe: Universe) -> set[str]:
-    """Stars whose latest presence event is a departure.
-
-    Derived from history each scan (RAC-002: no decision may exist
-    solely as scanner state). Legacy v0.1 'not_observed' events count
-    as departures for this derivation.
-    """
-    last_presence: dict[str, str] = {}
-    for entry in universe.history:
-        event_type = entry.get("event_type") or entry.get("event")
-        star_id = entry.get("star_id") or entry.get("entity_id")
-        if star_id is None:
-            continue
-        if event_type in _PRESENCE_EVENTS:
-            last_presence[star_id] = event_type
-        elif event_type == "not_observed":
-            last_presence[star_id] = "star_departure"
-    return {sid for sid, ev in last_presence.items() if ev == "star_departure"}
 
 
 def scan_filesystem(
@@ -196,7 +173,7 @@ def scan_filesystem(
     ]
     by_path = {s.path: s for s in priors}
     unmatched: dict[str, Star] = {s.id: s for s in priors}
-    departed = _departed_star_ids(universe)
+    departed = universe.departed_star_ids()
     observations = _observe(root_path, hash_files)
     stats["observed"] = len(observations)
 

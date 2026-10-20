@@ -188,7 +188,15 @@
             "inherits_from",
             "split_into",
             "merged_from",
-            "generated_echo"
+            "generated_echo",
+            "same_directory",
+            "shared_parent_directory",
+            "shared_extension",
+            "shared_name_stem",
+            "duplicate_candidate",
+            "temporal_neighbor",
+            "derived_from",
+            "unknown"
           ]
         },
         "weight": {

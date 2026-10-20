@@ -132,6 +132,33 @@ class Universe:
         self.snapshot_at = _now()
         return rel
 
+    def detach_evidence(
+        self, relationship_id: str, source: str, *, context: dict | None = None
+    ) -> list:
+        """Detach all evidence from one source (DG-1 lifecycle).
+
+        Records gravity_updated when anything was actually removed.
+        Returns the removed evidence items.
+        """
+        rel = self.get_gravity(relationship_id)
+        if rel is None:
+            raise ValueError(f"unknown relationship: {relationship_id}")
+        removed = rel.detach_evidence(source)
+        if removed:
+            self._emit_history(
+                "gravity_updated",
+                rel.id,
+                {
+                    "gravity_id": rel.id,
+                    "evidence_source": source,
+                    "evidence_removed": len(removed),
+                    "gravity": rel.gravity(),
+                },
+                context,
+            )
+            self.snapshot_at = _now()
+        return removed
+
     def remove_relationship(
         self, relationship_id: str, *, context: dict | None = None
     ) -> Relationship | None:
@@ -160,6 +187,28 @@ class Universe:
         return rel
 
     # -- DG-0 query API (Section 11) -------------------------------------
+
+    def departed_star_ids(self) -> set[str]:
+        """Stars whose latest presence event is a departure.
+
+        Derived from history (RAC-002: no decision may exist solely
+        as component state). Legacy v0.1 'not_observed' events count
+        as departures. Used by the scanner (rediscovery) and by DG-1
+        generation (departed stars are not part of the observed
+        topology, so they generate no new gravity).
+        """
+        presence = {"star_birth", "star_departure", "star_rediscovery"}
+        last: dict[str, str] = {}
+        for entry in self.history:
+            event_type = entry.get("event_type") or entry.get("event")
+            star_id = entry.get("star_id") or entry.get("entity_id")
+            if star_id is None:
+                continue
+            if event_type in presence:
+                last[star_id] = event_type
+            elif event_type == "not_observed":
+                last[star_id] = "star_departure"
+        return {sid for sid, ev in last.items() if ev == "star_departure"}
 
     def get_relationships(self, entity_id: str) -> list[Relationship]:
         """All relationships touching an entity."""

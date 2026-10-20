@@ -29,6 +29,9 @@ def _now() -> datetime:
 
 
 # Must match the relation enum in schemas/universe.schema.json.
+# The first eleven are the M1 structural types. The final eight are
+# the DG-0/DG-1 gravity registry (ruled 2026-10-20): a single
+# vocabulary, no aliases, no alternate spellings.
 RELATION_TYPES: frozenset[str] = frozenset({
     "contains",
     "depends_on",
@@ -41,6 +44,26 @@ RELATION_TYPES: frozenset[str] = frozenset({
     "split_into",
     "merged_from",
     "generated_echo",
+    "same_directory",
+    "shared_parent_directory",
+    "shared_extension",
+    "shared_name_stem",
+    "duplicate_candidate",
+    "temporal_neighbor",
+    "derived_from",
+    "unknown",
+})
+
+#: The DG-0/DG-1 gravity registry subset of RELATION_TYPES.
+GRAVITY_RELATION_TYPES: frozenset[str] = frozenset({
+    "same_directory",
+    "shared_parent_directory",
+    "shared_extension",
+    "shared_name_stem",
+    "duplicate_candidate",
+    "temporal_neighbor",
+    "derived_from",
+    "unknown",
 })
 
 
@@ -88,6 +111,18 @@ class Relationship:
             )
         self.evidence.append(evidence)
         return self
+
+    def detach_evidence(self, source: str) -> list:
+        """Remove all evidence from one source. Returns what was removed.
+
+        DG-1 lifecycle: when a gravity source stops firing for this
+        relationship, its evidence is detached (the Universe records
+        the change as gravity_updated; the history is never rewritten).
+        """
+        removed = [e for e in self.evidence if e.source == source]
+        if removed:
+            self.evidence = [e for e in self.evidence if e.source != source]
+        return removed
 
     def primary_evidence(self) -> Evidence | None:
         """First attached evidence, if any."""
