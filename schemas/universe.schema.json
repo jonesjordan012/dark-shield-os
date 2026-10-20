@@ -201,7 +201,17 @@
           "format": "date-time"
         },
         "evidence": {
-          "$ref": "#/definitions/evidence"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/evidence"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/evidence"
+              }
+            }
+          ]
         }
       },
       "additionalProperties": false

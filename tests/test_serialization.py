@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from darkshield import (
+    Evidence,
     Galaxy,
     NeutronStar,
     Pulsar,
@@ -72,8 +73,12 @@ def test_relationship_dict_roundtrip() -> None:
     rel = Relationship(
         id="rel:1", source="galaxy:dev", target="star:001",
         relation="contains", weight=1.0,
-        evidence={"reason": "imported_together", "observations": 14,
-                  "confidence": 0.82},
+    )
+    rel.attach_evidence(
+        Evidence(
+            source="dependency", observations=14, confidence=0.82,
+            details={"reason": "imported_together"},
+        )
     )
     assert Relationship.from_dict(rel.to_dict()) == rel
 

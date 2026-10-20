@@ -22,6 +22,7 @@ from pathlib import Path
 
 from .entities import Entity
 from .relations import Relationship
+from darkshield.gravity.models import Explanation
 
 SCHEMA_VERSION = "0.1"
 
@@ -77,6 +78,86 @@ class Universe:
         }
         self.history.append(entry)
         return entry
+
+    # -- M2: query API (explainability + ranking) ----------------------
+
+    def find_relationship(
+        self, source_id: str, target_id: str
+    ) -> Relationship | None:
+        """Find the relationship between two entities, either direction."""
+        for rel in self.relationships:
+            if rel.source == source_id and rel.target == target_id:
+                return rel
+        for rel in self.relationships:
+            if rel.source == target_id and rel.target == source_id:
+                return rel
+        return None
+
+    def explain(
+        self, source_id: str, target_id: str
+    ) -> Explanation | None:
+        """Explain why two entities are connected (M2-C).
+
+        Returns the relationship's verifiable explanation, or None when
+        the entities share no relationship.
+        """
+        rel = self.find_relationship(source_id, target_id)
+        return rel.explain() if rel is not None else None
+
+    def related_to(self, entity_id: str) -> list[Relationship]:
+        """All relationships touching an entity, either direction."""
+        return [
+            r
+            for r in self.relationships
+            if r.source == entity_id or r.target == entity_id
+        ]
+
+    def most_connected(self, n: int = 5) -> list[tuple[str, int]]:
+        """Entities ranked by relationship count (ties broken by id)."""
+        counts: dict[str, int] = {}
+        for rel in self.relationships:
+            counts[rel.source] = counts.get(rel.source, 0) + 1
+            counts[rel.target] = counts.get(rel.target, 0) + 1
+        ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+        return ranked[: max(0, n)]
+
+    def top_gravity(self, n: int = 5) -> list[tuple[str, float]]:
+        """Entities ranked by total gravity across their relationships."""
+        totals: dict[str, float] = {}
+        for rel in self.relationships:
+            gravity = rel.gravity()
+            totals[rel.source] = totals.get(rel.source, 0.0) + gravity
+            totals[rel.target] = totals.get(rel.target, 0.0) + gravity
+        ranked = sorted(totals.items(), key=lambda kv: (-kv[1], kv[0]))
+        return ranked[: max(0, n)]
+
+    def most_gravitational(self, n: int = 5) -> list[tuple[str, float]]:
+        """Top entities by gravity (M2-F name for top_gravity)."""
+        return self.top_gravity(n)
+
+    def explain_entity(self, entity_id: str) -> str | None:
+        """Human-readable summary of an entity's place in the universe.
+
+        Answers "why is this star important?" with measured evidence.
+        Returns None for an unknown entity id.
+        """
+        node = next((x for x in self.nodes if x.id == entity_id), None)
+        if node is None:
+            return None
+        rels = self.related_to(entity_id)
+        total = sum(r.gravity() for r in rels)
+        lines = [
+            f"{node.id} ({node.CLASS_TYPE}) '{node.name}'",
+            f"{len(rels)} relationships, total gravity {total:.2f}",
+        ]
+        for rel in sorted(rels, key=lambda r: -r.gravity())[:5]:
+            other = rel.target if rel.source == entity_id else rel.source
+            lines.append(
+                f"  - {rel.relation} {other}: gravity {rel.gravity():.2f}"
+            )
+            for evidence in rel.evidence:
+                lines.append(f"      * {evidence.describe()}")
+        return "\n".join(lines)
 
     def to_dict(self) -> dict:
         """Serialize to the universe.json document shape."""
