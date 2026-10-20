@@ -121,3 +121,14 @@ def test_get_relationships_by_entity() -> None:
     assert [r.id for r in u.get_relationships("star:a")] == ["gravity:test1"]
     assert [r.id for r in u.get_relationships("star:b")] == ["gravity:test1"]
     assert u.get_relationships("star:missing") == []
+
+
+def test_describe_handles_string_details() -> None:
+    # Regression: Explanation.describe() assumed evidence details were
+    # a dict and crashed on string details (the common case, incl. all
+    # DG-1 evidence). Caught by inspect_gravity.py on real data,
+    # 2026-10-20.
+    u = _universe()
+    _edge(u)  # evidence details: "a imports b" (a string)
+    text = u.explain_relationship("gravity:test1").describe()
+    assert "a imports b" in text
