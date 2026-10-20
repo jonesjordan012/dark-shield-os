@@ -1,0 +1,258 @@
+{
+  "created_at": "2026-10-19T20:00:00Z",
+  "history": [
+    {
+      "data": {
+        "new_score": 0.95,
+        "old_score": 0.72
+      },
+      "entity_id": "galaxy:a",
+      "event": "continuity_updated",
+      "timestamp": "2026-10-19T20:05:00Z"
+    },
+    {
+      "data": {
+        "primary_child": "galaxy:x",
+        "primary_share": 0.8,
+        "secondary_child": "galaxy:y",
+        "secondary_share": 0.2
+      },
+      "entity_id": "galaxy:a",
+      "event": "split",
+      "timestamp": "2026-10-19T20:10:00Z"
+    }
+  ],
+  "meta": {
+    "host": "dark-shield-host",
+    "hostname": "sun-universe",
+    "platform": "linux",
+    "scan_duration_ms": 1184
+  },
+  "metrics": {
+    "continuity_average": 0.65,
+    "galaxies": 3,
+    "pulsars": 1,
+    "relationships": 6,
+    "stars": 2
+  },
+  "nodes": [
+    {
+      "id": "star:001",
+      "name": "galaxy_identity.py",
+      "properties": {
+        "mime_type": "text/x-python",
+        "path": "/projects/darkshield/galaxy_identity.py",
+        "size_bytes": 6842
+      },
+      "state": "active",
+      "type": "star",
+      "classification": {
+        "source": "filesystem",
+        "kind": "file"
+      },
+      "canonical": true,
+      "derived": false
+    },
+    {
+      "id": "star:002",
+      "name": "validator.py",
+      "properties": {
+        "mime_type": "text/x-python",
+        "path": "/projects/darkshield/validator.py",
+        "size_bytes": 4210
+      },
+      "state": "active",
+      "type": "star",
+      "classification": {
+        "source": "filesystem",
+        "kind": "file"
+      },
+      "canonical": true,
+      "derived": false
+    },
+    {
+      "id": "pulsar:001",
+      "name": "python",
+      "properties": {
+        "cpu_percent": 18.2,
+        "memory_mb": 92.4,
+        "pid": 4248
+      },
+      "state": "active",
+      "type": "pulsar",
+      "classification": {
+        "source": "filesystem",
+        "kind": "process"
+      },
+      "canonical": true,
+      "derived": false
+    },
+    {
+      "id": "core:0",
+      "name": "CPU Core 0",
+      "properties": {
+        "core_index": 0,
+        "utilization": 36.0
+      },
+      "state": "active",
+      "type": "neutron_star",
+      "classification": {
+        "source": "filesystem",
+        "kind": "cpu_core"
+      },
+      "canonical": true,
+      "derived": false
+    },
+    {
+      "id": "galaxy:a",
+      "name": "A",
+      "properties": {
+        "continuity": 0.95,
+        "fate": {
+          "confidence": 0.91,
+          "status": "split",
+          "successors": [
+            {
+              "galaxy": "galaxy:x",
+              "inheritance": 0.8
+            },
+            {
+              "galaxy": "galaxy:y",
+              "inheritance": 0.2
+            }
+          ]
+        }
+      },
+      "state": "archived",
+      "type": "galaxy",
+      "classification": {
+        "source": "filesystem",
+        "kind": "directory"
+      },
+      "canonical": true,
+      "derived": false
+    },
+    {
+      "id": "galaxy:x",
+      "name": "X",
+      "properties": {
+        "continuity": 0.8,
+        "fate": {
+          "confidence": 0.88,
+          "status": "persisted",
+          "successors": []
+        }
+      },
+      "state": "active",
+      "type": "galaxy",
+      "classification": {
+        "source": "filesystem",
+        "kind": "directory"
+      },
+      "canonical": true,
+      "derived": false
+    },
+    {
+      "id": "galaxy:y",
+      "name": "Y",
+      "properties": {
+        "continuity": 0.2,
+        "fate": {
+          "confidence": 0.72,
+          "status": "persisted",
+          "successors": []
+        }
+      },
+      "state": "active",
+      "type": "galaxy",
+      "classification": {
+        "source": "filesystem",
+        "kind": "directory"
+      },
+      "canonical": true,
+      "derived": false
+    },
+    {
+      "id": "echo:001",
+      "type": "temporal_echo",
+      "name": "Session Echo",
+      "state": "active",
+      "canonical": false,
+      "derived": true,
+      "classification": {
+        "source": "inference",
+        "kind": "session_summary"
+      },
+      "properties": {
+        "start_time": "2026-10-19T20:00:00Z",
+        "end_time": "2026-10-19T20:15:00Z",
+        "attention_score": 0.73
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel:1",
+      "relation": "contains",
+      "source": "galaxy:x",
+      "target": "star:001",
+      "weight": 1.0
+    },
+    {
+      "evidence": {
+        "confidence": 0.82,
+        "observations": 14,
+        "reason": "imported_together"
+      },
+      "id": "rel:2",
+      "relation": "depends_on",
+      "source": "star:001",
+      "target": "star:002",
+      "weight": 0.75
+    },
+    {
+      "id": "rel:3",
+      "relation": "executes",
+      "source": "pulsar:001",
+      "target": "star:001",
+      "weight": 0.9
+    },
+    {
+      "id": "rel:4",
+      "relation": "runs_on",
+      "source": "pulsar:001",
+      "target": "core:0",
+      "weight": 0.5
+    },
+    {
+      "id": "rel:5",
+      "relation": "split_into",
+      "source": "galaxy:a",
+      "target": "galaxy:x",
+      "weight": 0.8
+    },
+    {
+      "id": "rel:6",
+      "relation": "split_into",
+      "source": "galaxy:a",
+      "target": "galaxy:y",
+      "weight": 0.2
+    },
+    {
+      "id": "rel:7",
+      "source": "galaxy:a",
+      "target": "echo:001",
+      "relation": "generated_echo",
+      "weight": 0.5
+    }
+  ],
+  "schema_version": "0.1",
+  "snapshot_at": "2026-10-19T20:15:00Z",
+  "universe_id": "urn:darkshield:universe:fixture",
+  "validators": {
+    "broken_edges": 0,
+    "duplicate_ids": 0,
+    "integrity_status": "pass",
+    "orphan_nodes": 0
+  }
+}
