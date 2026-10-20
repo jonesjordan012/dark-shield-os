@@ -15,7 +15,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import ClassVar
 
-from darkshield.gravity.calculator import FORMULA_M2B_V1
+from darkshield.gravity.calculator import FORMULA_DG2_V1, GravityCalculator
 from darkshield.gravity.evidence import Evidence
 from darkshield.gravity.models import (
     Explanation,
@@ -132,10 +132,10 @@ class Relationship:
         """Derived gravity in [0.0, 1.0], computed from evidence.
 
         Evidence is authoritative; this number is derived using the
-        current formula (m2b-v1). No evidence means no gravity (DG-6).
+        current formula (dg2-v1). No evidence means no gravity (DG-6).
         """
         return derive_gravity(
-            [e.to_dict() for e in self.evidence], FORMULA_M2B_V1
+            [e.to_dict() for e in self.evidence], FORMULA_DG2_V1
         )
 
     @property
@@ -144,8 +144,16 @@ class Relationship:
         return aggregate_confidence([e.to_dict() for e in self.evidence])
 
     def explain(self) -> Explanation:
-        """Build a verifiable explanation of this relationship's gravity."""
+        """Build a verifiable explanation of this relationship's gravity.
+
+        DG-2 Section 8: the explanation exposes every contributing
+        source, its contribution, the derived gravity, and the
+        valuation version.
+        """
         snapshots = [e.to_dict() for e in self.evidence]
+        contributions = GravityCalculator(
+            formula=FORMULA_DG2_V1
+        ).contributions(snapshots)
         return Explanation(
             relationship_id=self.id,
             source=self.source,
@@ -154,7 +162,8 @@ class Relationship:
             evidence=snapshots,
             gravity=self.gravity(),
             confidence=self.confidence,
-            formula=FORMULA_M2B_V1,
+            formula=FORMULA_DG2_V1,
+            contributions=contributions,
         )
 
     # -- serialization --------------------------------------------------

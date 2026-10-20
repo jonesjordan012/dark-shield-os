@@ -225,6 +225,34 @@ class Universe:
         rel = self.get_gravity(relationship_id)
         return rel.explain() if rel is not None else None
 
+    # -- DG-2 queries (Section 11) ----------------------------------------
+
+    def strongest_relationships(self, n: int = 10) -> list[Relationship]:
+        """Relationships ranked by derived structural strength, strongest first."""
+        return sorted(
+            self.relationships, key=lambda r: r.gravity(), reverse=True
+        )[:n]
+
+    def weakest_relationships(self, n: int = 10) -> list[Relationship]:
+        """Relationships ranked by derived structural strength, weakest first."""
+        return sorted(self.relationships, key=lambda r: r.gravity())[:n]
+
+    def related_stars(self, entity_id: str) -> list:
+        """Entities on the other side of this entity's relationships."""
+        by_id = {node.id: node for node in self.nodes}
+        others: list = []
+        seen: set[str] = set()
+        for rel in self.relationships:
+            other = None
+            if rel.source == entity_id:
+                other = rel.target
+            elif rel.target == entity_id:
+                other = rel.source
+            if other is not None and other not in seen and other in by_id:
+                seen.add(other)
+                others.append(by_id[other])
+        return others
+
     def record(self, entity_id: str, event: str, data: dict | None = None) -> dict:
         """Append a history fact (facts, not visualizations)."""
         entry = {

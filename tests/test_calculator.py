@@ -18,6 +18,7 @@ from darkshield import (
     calculate_gravity,
     derive_gravity,
 )
+from darkshield.gravity.calculator import FORMULA_DG2_V1
 from darkshield.gravity.validators import validate_gravity
 
 
@@ -79,7 +80,11 @@ def test_explanation_records_current_formula() -> None:
         Evidence(source="temporal", observations=18, confidence=0.82)
     )
     explanation = rel.explain()
-    assert explanation.formula == FORMULA_M2B_V1
+    # The current formula is dg2-v1 since the DG-2 ruling (2026-10-20);
+    # this test asserts currency, so its expectation moves with the
+    # formula — see test_dg2_e_revaluation_preserves_evidence for the
+    # guarantee that older formulas still verify.
+    assert explanation.formula == FORMULA_DG2_V1
     assert explanation.supports(rel.gravity())
 
 
