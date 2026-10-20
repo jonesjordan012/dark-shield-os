@@ -44,12 +44,15 @@ def scan(root: Path, universe_file: Path) -> dict:
     else:
         universe = scan_filesystem(root)
     universe.save(str(universe_file))
-    return universe.history[-1]["data"]
+    observations = [
+        h for h in universe.history if h.get("event_type") == "observation"
+    ]
+    return observations[-1]
 
 
 def events(universe_file: Path, kind: str) -> list[dict]:
     universe = Universe.load(str(universe_file))
-    return [h for h in universe.history if h["event"] == kind]
+    return [h for h in universe.history if h.get("event_type") == kind]
 
 
 def main() -> int:
@@ -79,8 +82,9 @@ def main() -> int:
         check("rename", data["new"] == 0 and data["claims"] == 1,
               "no births; exactly one inference was needed")
         check("rename", bool(claims)
-              and claims[-1]["data"]["confidence"] >= CONTINUITY_THRESHOLD
-              and "matching_inode" in claims[-1]["data"]["evidence"],
+              and claims[-1]["confidence"] >= CONTINUITY_THRESHOLD
+              and any(e.get("type") == "same_inode"
+                      for e in claims[-1]["evidence"]),
               "claim carries its evidence and confidence")
 
         print("\nTest 2: Edit notes.md (append a line)")
@@ -107,11 +111,11 @@ def main() -> int:
         data = scan(root, universe_file)
         print(f"  observed={data['observed']} new={data['new']} "
               f"claims={data['claims']} unresolved={data['unresolved']}")
-        unresolved = events(universe_file, "continuity_unresolved")
+        unresolved = events(universe_file, "identity_unresolved")
         check("ambiguous", data["new"] == 1 and data["unresolved"] == 1,
               "scanner mints a new star instead of guessing")
         check("ambiguous", bool(unresolved)
-              and unresolved[-1]["data"]["confidence"] < CONTINUITY_THRESHOLD,
+              and unresolved[-1]["confidence"] < CONTINUITY_THRESHOLD,
               "uncertainty is on the record, with its confidence")
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
