@@ -117,19 +117,21 @@ def collect_stars(root, max_depth=3):
 
 
 def collect_pulsars(limit=8):
-    """Read /proc - Linux's window into living processes - and return the
-    most numerous process names. Each one is a pulsar: active computation."""
+    """Count live processes by name via psutil — works on
+    Windows, Linux, and macOS. Each one is a pulsar:
+    active computation."""
     counts = {}
     try:
-        pids = [p for p in os.listdir("/proc") if p.isdigit()]
-    except OSError:
+        import psutil
+    except ImportError:
         return []
-    for pid in pids:
+    for proc in psutil.process_iter(["name"]):
         try:
-            with open(f"/proc/{pid}/comm", encoding="utf-8") as f:
-                name = f.read().strip()
+            name = proc.info["name"] or "unknown"
             counts[name] = counts.get(name, 0) + 1
-        except OSError:
+        except (psutil.NoSuchProcess,
+                psutil.AccessDenied,
+                psutil.ZombieProcess):
             continue  # processes are born and die constantly; skip the ghosts
     return sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:limit]
 
